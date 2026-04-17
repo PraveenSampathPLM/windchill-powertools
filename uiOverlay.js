@@ -331,10 +331,9 @@ export function createOverlay(callbacks) {
           </section>
           <section class="wpt-card">
             <div class="wpt-card-title">Need Help?</div>
-            <div class="wpt-shortcut-desc">Free tool, built by Plural Technology to help Windchill users discover support and services when they need them.</div>
+            <div class="wpt-shortcut-desc">Free tool by Praveen Sampath. If you need help with Windchill debugging or log analysis, reach out directly by email.</div>
             <div class="wpt-help-links">
-              <button class="wpt-button" id="plural-website">Visit Website</button>
-              <button class="wpt-button" id="plural-email">Email Us</button>
+              <button class="wpt-button" id="contact-email">Email Praveen Sampath</button>
             </div>
           </section>
           <section class="wpt-card">
@@ -423,11 +422,8 @@ export function createOverlay(callbacks) {
   shadow.getElementById("open-all-resolution-searches").addEventListener("click", () => {
     callbacks.onOpenAllResolutionSearches();
   });
-  shadow.getElementById("plural-website").addEventListener("click", () => {
-    callbacks.onOpenShortcut("https://pluraltechnology.com");
-  });
-  shadow.getElementById("plural-email").addEventListener("click", () => {
-    callbacks.onOpenShortcut("mailto:info@pluraltechnology.com");
+  shadow.getElementById("contact-email").addEventListener("click", () => {
+    callbacks.onOpenShortcut("mailto:pravincee@gmail.com");
   });
 
   startDrag(launcher);

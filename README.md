@@ -16,7 +16,7 @@
 - When `jcaDebug=true` is enabled, hover debug-marked Windchill UI elements and parse the component details
 - Copy the parsed JCA details as JSON from the overlay
 - Open Windchill System Health Monitoring tools from an expandable shortcuts section
-- Show a `Need Help?` section with Plural Technology contact options
+- Show a `Need Help?` section with Praveen Sampath contact information
 - On `logFiles.jsp`, analyze the visible log text and copy the analysis
 - Generate online resolution searches from detected exceptions/findings and open PTC/community/web searches directly
 - Switch between light and dark theme from an easier header toggle
@@ -35,7 +35,7 @@
 - The parser looks for `jcaDebug`-style metadata in rendered text and HTML comments, then correlates that metadata to the element you hover.
 - Parsed details can be copied directly from the overlay.
 - System Health shortcuts are generated from the standard JMX tool paths under `/Windchill/wtcore/jsp/jmx/`.
-- The `Need Help?` section links to [Plural Technology](https://pluraltechnology.com) and `info@pluraltechnology.com`.
+- The `Need Help?` section links to `pravincee@gmail.com`.
 - Log analysis is local and non-billed; it categorizes the visible log and then generates resolution searches.
 - After log analysis, the extension builds targeted resolution searches for PTC Support, PTC Community, and general web search.
 - All parsing and export runs locally in the browser. No PLM data is transmitted externally.
