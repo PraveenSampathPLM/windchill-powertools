@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Windchill PowerTools",
+  "version": "0.1.0",
+  "description": "Minimal Windchill debug helper with jcaDebug, jsDebug, and parsed JCA detail copy.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "*://*/Windchill/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*/Windchill/*"
+      ],
+      "js": [
+        "contentScript.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "uiOverlay.js",
+        "customizationScanner.js",
+        "logAnalyzer.js"
+      ],
+      "matches": [
+        "*://*/*"
+      ]
+    }
+  ],
+  "action": {
+    "default_title": "Windchill PowerTools"
+  }
+}
