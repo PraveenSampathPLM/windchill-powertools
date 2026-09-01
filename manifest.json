@@ -1,38 +1,46 @@
 {
   "manifest_version": 3,
   "name": "Windchill PowerTools",
-  "version": "0.1.0",
-  "description": "Minimal Windchill debug helper with jcaDebug, jsDebug, and parsed JCA detail copy.",
+  "version": "1.0.0",
+  "description": "Windchill debug toolkit: JCA debug resolver, API tester, type & attribute search, data model export, log and screenshot tools.",
   "permissions": [
-    "storage"
+    "storage",
+    "scripting",
+    "downloads"
   ],
-  "host_permissions": [
-    "*://*/Windchill/*"
+  "optional_host_permissions": [
+    "*://*/Windchill/*",
+    "<all_urls>"
   ],
-  "content_scripts": [
-    {
-      "matches": [
-        "*://*/Windchill/*"
-      ],
-      "js": [
-        "contentScript.js"
-      ],
-      "run_at": "document_idle"
-    }
-  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "options.html",
   "web_accessible_resources": [
     {
       "resources": [
+        "contentScript.js",
         "uiOverlay.js",
         "customizationScanner.js",
-        "logAnalyzer.js"
+        "logAnalyzer.js",
+        "tamBridge.js"
       ],
       "matches": [
         "*://*/*"
       ]
     }
   ],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
   "action": {
-    "default_title": "Windchill PowerTools"
+    "default_title": "Windchill PowerTools",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
   }
 }

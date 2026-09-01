@@ -149,6 +149,37 @@ export function formatParsedDetails(block, score = "") {
   };
 }
 
+export function resolveCustomizationPoints(element, block, score = 0) {
+  if (!block) {
+    return null;
+  }
+
+  const analysis = block.analysis || {};
+  const resolved = {
+    Status: "Resolved",
+    "Component Type": inferComponentType(element, analysis),
+    "Match Score": score || "",
+    "Debug Source": block.sourceType,
+    "Anchor Path": block.anchorPath,
+    "Component Id": analysis["Component Id"] || "",
+    JSP: analysis.JSP || "",
+    "MVC Builder": analysis["MVC Builder"] || analysis.ComponentConfigBuilder || "",
+    TableBuilder: analysis.TableBuilder || "",
+    "Data Builder": analysis["Data Builder"] || analysis.ComponentDataBuilder || "",
+    DataUtility: analysis.DataUtility || "",
+    Validator: analysis.Validator || "",
+    FormProcessor: analysis.FormProcessor || "",
+    ActionModel: analysis.ActionModel || "",
+    "Resource Bundle": analysis["Resource Bundle"] || "",
+    "Column Id": analysis["Column Id"] || "",
+    "Attribute Name": analysis["Attribute Name"] || ""
+  };
+
+  return Object.fromEntries(
+    Object.entries(resolved).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  );
+}
+
 function looksLikeDebugMetadata(text) {
   if (!text || text.length < 20 || text.length > 5000) {
     return false;
@@ -322,6 +353,47 @@ function buildDomPath(element) {
   }
 
   return segments.join(" > ");
+}
+
+function inferComponentType(element, analysis) {
+  if (analysis.TableBuilder) {
+    return "Table";
+  }
+  if (analysis.FormProcessor || element?.closest?.("form")) {
+    return "Form";
+  }
+  if (analysis["Column Id"]) {
+    return "Column";
+  }
+  if (analysis["Attribute Name"]) {
+    return "Attribute";
+  }
+  if (analysis.ActionModel) {
+    return "Action / Menu";
+  }
+  if (analysis["MVC Builder"] || analysis.ComponentConfigBuilder) {
+    return "MVC Component";
+  }
+
+  if (!(element instanceof Element)) {
+    return "Component";
+  }
+
+  const tag = element.tagName.toLowerCase();
+  if (tag === "table") {
+    return "Table";
+  }
+  if (tag === "form") {
+    return "Form";
+  }
+  if (["button", "a"].includes(tag)) {
+    return "Action / Menu";
+  }
+  if (["td", "th"].includes(tag)) {
+    return "Column / Cell";
+  }
+
+  return "Component";
 }
 
 function normalizeText(value) {

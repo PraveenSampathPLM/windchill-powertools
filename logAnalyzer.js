@@ -1,32 +1,38 @@
-export async function analyzeLogText(logText) {
-  const normalized = String(logText || "").trim();
-  if (!normalized) {
-    return {
-      mode: "empty",
-      summary: "No visible log text was found on this page.",
-      findings: [],
-      nextSteps: []
-    };
+export function extractVisibleLogText(rootDocument) {
+  const selectedText = getSelectedText(rootDocument);
+  if (selectedText.length > 20) {
+    return selectedText;
   }
 
-  return analyzeHeuristically(normalized);
-}
+  const activeSelection = getActiveControlSelection(rootDocument);
+  if (activeSelection.length > 20) {
+    return activeSelection;
+  }
 
-export function extractVisibleLogText(rootDocument) {
   const candidates = [
     ...Array.from(rootDocument.querySelectorAll("pre")),
     ...Array.from(rootDocument.querySelectorAll("textarea")),
+    ...Array.from(rootDocument.querySelectorAll("[role='log']")),
+    ...Array.from(rootDocument.querySelectorAll("[class*='log' i], [id*='log' i], [name*='log' i]")),
     ...Array.from(rootDocument.querySelectorAll("table")),
-    rootDocument.body
+    rootDocument.body,
+    ...getSameOriginFrameDocuments(rootDocument).flatMap((frameDocument) => [
+      ...Array.from(frameDocument.querySelectorAll("pre")),
+      ...Array.from(frameDocument.querySelectorAll("textarea")),
+      ...Array.from(frameDocument.querySelectorAll("[role='log']")),
+      ...Array.from(frameDocument.querySelectorAll("[class*='log' i], [id*='log' i], [name*='log' i]")),
+      ...Array.from(frameDocument.querySelectorAll("table")),
+      frameDocument.body
+    ])
   ];
 
   const scored = candidates
     .map((node) => {
-      const text = normalize(node?.textContent || node?.value || "");
+      const text = normalize(readNodeText(node));
       return {
         node,
         text,
-        score: text.length
+        score: scoreLogCandidate(text)
       };
     })
     .filter((entry) => entry.text.length > 100)
@@ -35,171 +41,159 @@ export function extractVisibleLogText(rootDocument) {
   return scored[0]?.text || "";
 }
 
-export function buildResolutionSearches(logText, analysis) {
-  const signatures = extractSearchSignatures(logText, analysis);
-  return signatures.slice(0, 4).map((signature) => ({
-    label: signature,
-    searches: [
-      {
-        name: "Google",
-        url: `https://www.google.com/search?q=${encodeURIComponent(`Windchill ${signature}`)}`
-      },
-      {
-        name: "PTC Support",
-        url: `https://support.ptc.com/appserver/search/index.jsp?q=${encodeURIComponent(signature)}`
-      },
-      {
-        name: "PTC Community",
-        url: `https://community.ptc.com/t5/forums/searchpage/tab/message?advanced=false&allow_punctuation=false&q=${encodeURIComponent(signature)}`
-      }
-    ]
-  }));
+export function extractErrorStackTrace(logText) {
+  const lines = normalize(String(logText || "")).split(/\r?\n/);
+  const firstErrorIndex = findBestErrorStart(lines);
+
+  if (firstErrorIndex < 0) {
+    return "";
+  }
+
+  const stackLines = [];
+  for (let index = Math.max(0, firstErrorIndex - 2); index < lines.length; index += 1) {
+    const line = lines[index];
+    const trimmed = line.trim();
+    const payload = getWindchillLogPayload(line);
+    const isTraceLine =
+      index <= firstErrorIndex ||
+      isStackPayload(payload) ||
+      isErrorLine(payload);
+
+    if (!isTraceLine && stackLines.length > 3) {
+      break;
+    }
+
+    if (trimmed || stackLines.length) {
+      stackLines.push(line);
+    }
+  }
+
+  const stackTrace = stackLines.join("\n").trim();
+  if (stackTrace.split(/\r?\n/).length >= 2) {
+    return stackTrace;
+  }
+
+  return extractErrorContext(lines, firstErrorIndex);
 }
 
-function analyzeHeuristically(logText) {
-  const lines = logText.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-  const errorLines = lines.filter((line) => /(error|exception|fatal|severe)/i.test(line));
-  const warnLines = lines.filter((line) => /\bwarn(?:ing)?\b/i.test(line));
-  const stackFrames = lines.filter((line) => /^\s*at\s+[\w.$_]+/.test(line));
-  const timestamps = lines
-    .map((line) => line.match(/\b\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}\b|\b\d{2}:\d{2}:\d{2}\b/))
-    .filter(Boolean)
-    .map((match) => match[0]);
-
-  const topExceptions = topMatches(
-    lines
-      .map((line) => line.match(/\b[\w.$]+(?:Exception|Error)\b/))
-      .filter(Boolean)
-      .map((match) => match[0])
-  );
-
-  const findings = [];
-  if (errorLines.length) {
-    findings.push({
-      category: "Errors",
-      severity: "high",
-      title: "Error and exception lines detected",
-      explanation: "The visible log contains explicit error or exception markers.",
-      evidence: `${errorLines.length} matching lines`
-    });
-  }
-  if (warnLines.length) {
-    findings.push({
-      category: "Warnings",
-      severity: errorLines.length ? "medium" : "low",
-      title: "Warning lines detected",
-      explanation: "Warnings may indicate a degraded path or a precursor to failures.",
-      evidence: `${warnLines.length} warning lines`
-    });
-  }
-  if (topExceptions.length) {
-    findings.push({
-      category: "Exceptions",
-      severity: "high",
-      title: "Top exception signatures identified",
-      explanation: "The log shows repeated exception or error class names.",
-      evidence: topExceptions.join(", ")
-    });
-  }
-  if (stackFrames.length) {
-    findings.push({
-      category: "Stack Trace",
-      severity: "medium",
-      title: "Stack trace content detected",
-      explanation: "At least one Java stack trace is visible in the current log text.",
-      evidence: `${stackFrames.length} stack-frame lines`
-    });
-  }
-  if (timestamps.length >= 2) {
-    findings.push({
-      category: "Time Range",
-      severity: "info",
-      title: "Visible time range detected",
-      explanation: "The current log selection spans a measurable time window.",
-      evidence: `${timestamps[0]} -> ${timestamps[timestamps.length - 1]}`
-    });
+function readNodeText(node) {
+  if (!node) {
+    return "";
   }
 
-  const nextSteps = [];
-  if (topExceptions.length) {
-    nextSteps.push(`Start with the first occurrence of ${topExceptions[0]} and inspect the surrounding stack trace.`);
+  if ("value" in node && node.value) {
+    return node.value;
   }
-  if (warnLines.length && !errorLines.length) {
-    nextSteps.push("Review repeated warnings first to see whether they correlate with a specific request or background task.");
-  }
-  nextSteps.push("Search upward for the request, user, or method context immediately before the first critical line.");
-  nextSteps.push("Use the generated Google/PTC searches to look for known resolutions.");
 
-  return {
-    mode: "heuristic",
-    summary: buildSummary(errorLines.length, warnLines.length, topExceptions),
-    findings,
-    nextSteps
-  };
+  return node.innerText || node.textContent || "";
 }
 
-function extractSearchSignatures(logText, analysis) {
-  const signatures = new Set();
+function scoreLogCandidate(text) {
+  const normalized = normalize(text);
+  let score = normalized.length;
+  if (/\b[\w.$]+(?:Exception|Error)\b/.test(normalized)) {
+    score += 5000;
+  }
+  if (/^\s*at\s+[\w.$_]+/m.test(normalized)) {
+    score += 4000;
+  }
+  if (/\b(?:ERROR|FATAL|SEVERE)\b/.test(normalized)) {
+    score += 2000;
+  }
+  return score;
+}
 
-  (analysis?.findings || []).forEach((finding) => {
-    [finding.title, finding.evidence].forEach((value) => {
-      const exception = extractExceptionName(value);
-      if (exception) {
-        signatures.add(exception);
-      } else if (value) {
-        signatures.add(String(value).slice(0, 100));
+function getSelectedText(rootDocument) {
+  try {
+    return normalize(rootDocument.defaultView?.getSelection?.().toString() || "");
+  } catch {
+    return "";
+  }
+}
+
+function getActiveControlSelection(rootDocument) {
+  const activeElement = rootDocument.activeElement;
+  if (!activeElement || !("value" in activeElement)) {
+    return "";
+  }
+
+  const start = activeElement.selectionStart;
+  const end = activeElement.selectionEnd;
+  if (!Number.isInteger(start) || !Number.isInteger(end) || end <= start) {
+    return "";
+  }
+
+  return normalize(activeElement.value.slice(start, end));
+}
+
+function getSameOriginFrameDocuments(rootDocument) {
+  const documents = [];
+  rootDocument.querySelectorAll("iframe, frame").forEach((frame) => {
+    try {
+      if (frame.contentDocument) {
+        documents.push(frame.contentDocument);
       }
-    });
-  });
-
-  const lines = String(logText || "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  lines.forEach((line) => {
-    const exception = extractExceptionName(line);
-    if (exception && signatures.size < 4) {
-      signatures.add(exception);
+    } catch {
+      // Cross-origin frames are intentionally skipped.
     }
   });
-
-  if (!signatures.size) {
-    signatures.add("Windchill log error");
-  }
-
-  return Array.from(signatures)
-    .map((value) => value.replace(/\s+/g, " ").trim())
-    .filter(Boolean);
+  return documents;
 }
 
-function extractExceptionName(value) {
-  const match = String(value || "").match(/\b[\w.$]+(?:Exception|Error)\b/);
-  return match?.[0] || "";
+function isErrorLine(line) {
+  return (
+    /\b(?:exception|error|fatal|severe)\b/i.test(line) ||
+    /\b[\w.$]+(?:Exception|Error|Throwable)\b/.test(line) ||
+    /^\s*Caused by:/i.test(line)
+  );
 }
 
-function topMatches(items) {
-  const counts = new Map();
-  items.forEach((item) => counts.set(item, (counts.get(item) || 0) + 1));
-  return Array.from(counts.entries())
-    .sort((left, right) => right[1] - left[1])
-    .slice(0, 3)
-    .map(([item, count]) => `${item} (${count})`);
+function findBestErrorStart(lines) {
+  const stackFrameIndex = lines.findIndex((line) => isStackPayload(getWindchillLogPayload(line)));
+  if (stackFrameIndex >= 0) {
+    for (let index = stackFrameIndex - 1; index >= Math.max(0, stackFrameIndex - 8); index -= 1) {
+      const payload = getWindchillLogPayload(lines[index]);
+      if (isErrorLine(payload) || /\b(?:ERROR|FATAL|SEVERE)\b/.test(lines[index])) {
+        return index;
+      }
+    }
+    return stackFrameIndex;
+  }
+
+  return lines.findIndex((line) => isErrorLine(getWindchillLogPayload(line)) || isErrorLine(line));
 }
 
-function buildSummary(errorCount, warnCount, topExceptions) {
-  if (topExceptions.length) {
-    return `The visible log is centered around ${topExceptions[0]}, with ${errorCount} error lines and ${warnCount} warning lines detected.`;
+function getWindchillLogPayload(line) {
+  const value = String(line || "");
+  const markerIndex = value.indexOf(" - ");
+  if (markerIndex >= 0) {
+    return value.slice(markerIndex + 3).trim();
   }
-  if (errorCount) {
-    return `The visible log contains ${errorCount} error lines and ${warnCount} warning lines.`;
-  }
-  if (warnCount) {
-    return `The visible log contains warnings but no obvious exception signature.`;
-  }
-  return "No strong error signatures were detected in the visible log text.";
+  return value.trim();
+}
+
+function isStackPayload(payload) {
+  return (
+    /^\s*at\s+[\w.$_]+/.test(payload) ||
+    /^\s*Caused by:/i.test(payload) ||
+    /^\s*Suppressed:/i.test(payload) ||
+    /^\s*\.\.\. \d+ more/.test(payload) ||
+    /^\s*(?:com|wt|org|java|javax|jdk)\.[\w.$_]+(?:Exception|Error|Throwable)?/.test(payload)
+  );
+}
+
+function extractErrorContext(lines, firstErrorIndex) {
+  const start = Math.max(0, firstErrorIndex - 3);
+  const end = Math.min(lines.length, firstErrorIndex + 12);
+  return lines.slice(start, end).join("\n").trim();
 }
 
 function normalize(value) {
-  return String(value || "").replace(/\s+\n/g, "\n").trim();
+  return String(value || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
