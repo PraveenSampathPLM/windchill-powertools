@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Privacy policy for Windchill TAM Export, a Chrome extension by Praveen Sampath."><title>Windchill TAM Export Privacy Policy</title><style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f9fc;
+        --card: #ffffff;
+        --text: #173047;
+        --muted: #547087;
+        --accent: #0e6f61;
+        --border: #dbe7f1;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      main {
+        max-width: 860px;
+        margin: 40px auto;
+        padding: 0 20px 40px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 28px;
+        box-shadow: 0 18px 50px rgba(13, 38, 59, 0.06);
+      }
+      h1, h2 { line-height: 1.2; }
+      h1 { margin-top: 0; font-size: 2rem; }
+      h2 { margin-top: 28px; font-size: 1.15rem; }
+      .muted { color: var(--muted); }
+      a { color: var(--accent); }
+      ul { padding-left: 22px; }
+      code {
+        background: #eef5fa;
+        padding: 2px 6px;
+        border-radius: 6px;
+      }
+    
+@media(max-width:540px){main{margin:20px auto;padding:0 12px 24px}.card{padding:20px}h1{font-size:1.7rem}}
+</style></head><body><main><article class="card">
+<h1>Windchill TAM Export Privacy Policy</h1>
+<p class="muted">Last updated: September 11, 2026</p>
+<p>Windchill TAM Export is a Chrome extension published by Praveen Sampath. This privacy policy explains what the extension accesses, how it uses data, and what data is and is not transmitted outside your browser.</p>
+<h2>1. What the extension accesses</h2>
+<p>The extension accesses the Windchill tab you explicitly select by clicking its toolbar icon. Live collection requires an authenticated Type and Attribute Management (TAM) session. It does not request persistent access to all websites or collect your general browsing history.</p>
+<p>It processes the selected Windchill site address, administration context and configuration metadata: types, attributes, descriptions, properties, inheritance indicators, constraints and supplied conditions, defaults, visibility, enumeration definitions and values, reusable attributes, layouts, measurement definitions, and classification metadata when enabled. Collection coverage, source URLs and diagnostic errors are also included.</p>
+<h2>2. How the extension uses data</h2>
+<p>The extension uses this information only to collect, preview and document your selected Windchill configuration. It generates a detailed Excel workbook, a readable type specification and JSON downloads locally in your browser. It also saves a local checkpoint for recovery.</p>
+<p>Type selection controls the types collected; shared libraries such as enumerations and reusable attributes remain included. The optional sample-data feature uses fictional configuration and does not make Windchill requests or replace your saved checkpoint.</p>
+<h2>3. Data sharing and transmission</h2>
+<p>Configuration requests go to read endpoints within the selected Windchill application on the same origin. These requests use your existing browser session. The browser sends its normal session credentials to your Windchill server; the extension does not extract or store passwords, authentication tokens or cookies.</p>
+<p>Windchill TAM Export has no publisher-operated backend, analytics, telemetry or advertising. It does not send collected configuration to Praveen Sampath or another external service, sell user data, use it for unrelated purposes, or use or transfer it for creditworthiness or lending decisions.</p>
+<p>When you click a source link in an exported workbook, the browser visits that destination at your request. If you use the contact email link, your email application or provider handles that communication. Windchill, Chrome, your email provider and the hosting provider of this policy page operate under their own policies.</p>
+<h2>4. Local storage and deletion</h2>
+<p>The latest collected dataset is stored in the extension’s local IndexedDB. Checkpoints are saved periodically during collection and at completion or cancellation. A checkpoint remains until another collection replaces it, you select Clear saved data, or you uninstall the extension.</p>
+<p>Clear saved data deletes the saved checkpoint and clears the current in-memory dataset and preview. Restore last local checkpoint allows previewing and downloading saved data; it does not resume an interrupted collection.</p>
+<p>Excel and JSON files you download remain in your chosen download location. Clearing extension data or uninstalling does not delete those files; manage and delete them separately. Your device backups or organization-managed synchronization may retain copies according to their settings.</p>
+<h2>5. Personal information</h2>
+<p>The extension does not require a separate account and does not automatically collect your email address for the publisher. Windchill configuration can contain organization names, user names, URLs or other personal information entered into descriptions and other fields. Such information may appear in local checkpoints and exports.</p>
+<p>Export only configuration you are authorized to access and handle downloaded files according to your organization’s information-management rules. If you contact Praveen Sampath for support, include only the information you choose to share and avoid sending passwords, session credentials or confidential exports.</p>
+<h2>6. Permissions and security</h2>
+<p>activeTab provides temporary access to the selected tab after you click the extension icon. scripting runs packaged discovery and read-request functions in that tab. The extension restricts its metadata requests to same-origin GET requests through a read-endpoint allowlist.</p>
+<p>All executable extension code and dependencies are bundled in the extension. Remote Windchill responses are parsed as metadata; returned scripts are not executed. The extension does not load remote executable code. Its content security policy remains enabled, and generated workbook values are written as data rather than executable formulas.</p>
+<p>Local processing does not make downloaded files or device storage immune to access by others who can access your computer, browser profile or backups. Protect them using your organization’s normal device and file-access controls.</p>
+<h2>7. Changes to this policy</h2>
+<p>This privacy policy may be updated to reflect changes to the extension. Updates will be published on this page with a revised last-updated date.</p>
+<h2>8. Contact</h2>
+<p>Praveen Sampath</p>
+<p>Email: <a href="mailto:pravincee@gmail.com">pravincee@gmail.com</a></p>
+</article></main></body></html>
